@@ -1,38 +1,56 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
+import { UserEntity } from './Entities/user.entity.js';
+import { Repository } from 'typeorm';
+import { RegisterDto } from '../auth/dto/register.dto.js';
 @Injectable()
 export class UsersService {
-    // Pre-hashed version of the string "password123" using bcrypt (10 salt rounds)
-  private defaultPasswordHash = bcrypt.hashSync('password123', 10);
-  
-  // In-memory array storing user records
-  private users: any[] = [
-    {
-      id: '1',
-      email: 'admin@example.com',
-      password: this.defaultPasswordHash,
-      role: 'admin',
-    },
-    {
-      id: '2',
-      email: 'john@example.com',
-      password: this.defaultPasswordHash,
-      role: 'user',
-    },
-  ];
 
-  // Helper method to locate a user by email
-  findByEmail(email: string) {
-    return this.users.find((user) => user.email === email);
+
+  constructor(
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>
+  ) {}
+
+  async findByEmail(email: string, throwIfNotFound?: boolean): Promise<UserEntity | null> {
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user && throwIfNotFound) {
+      throw new Error('User not found');
+    }
+    return user;
   }
 
-  // Method to insert a new user object into our array
-  create(user: any) {
-    const newUser = {
-      id: Date.now().toString(),
-      ...user,
-    };
-    this.users.push(newUser);
-    return newUser;
+  async findAll(): Promise<UserEntity[]> {
+    const users = await this.userRepository.find();
+    return users;
   }
+  async searchUsers(email: string, username: string): Promise<UserEntity[]> {
+
+    try {
+      const queryBuilder = this.userRepository.createQueryBuilder('user');
+
+      if (email) {
+        queryBuilder.andWhere('user.email LIKE :email', { email: `%${email}%` });
+      }
+      if (username) {
+        queryBuilder.andWhere('user.username ILIKE :username', { username: `%${username}%` });
+      }
+
+    const users = await queryBuilder.getMany();
+    return users;
+    } catch (error: any) {
+      throw new InternalServerErrorException('Error searching users: ' + error.message);
+    }
+  }
+
+  async createUser(payload: RegisterDto): Promise<UserEntity> {
+    const newUser = this.userRepository.create({
+      email: payload.email,
+      password: payload.password,
+      username: payload.username,
+    });
+    return this.userRepository.save(newUser);
+  }
+
 }

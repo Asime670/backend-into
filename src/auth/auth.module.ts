@@ -3,6 +3,8 @@ import { AuthService } from './auth.service.js';
 import { AuthController } from './auth.controller.js';
 import { UsersModule } from '../users/users.module.js';
 import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { LocalStrategy } from './local.strategy.js';
 
 @Module({
   imports: [
@@ -12,8 +14,10 @@ import { JwtModule } from '@nestjs/jwt';
       secret: 'MY_SUPER_SECRET_KEY_123', // Secret used to sign tokens
       signOptions: { expiresIn: '1h' },  // Token expires in 1 hour
     }),
+    UsersModule,
+    PassportModule
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, LocalStrategy],
 })
 export class AuthModule {}

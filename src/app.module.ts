@@ -20,7 +20,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     ConfigModule.forRoot(
       {
         isGlobal: true,
-        envFilePath: ['.env.development.local', '.env.dev'],
+        envFilePath: '.env.dev',
       
       }
     ),
@@ -43,6 +43,6 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     AuthModule,
   ],
   controllers: [AppController, AuthController],
-  providers: [AppService, AuthService],
+  providers: [AppService, AuthService, SynapseConfigService],
 })
 export class AppModule { }
