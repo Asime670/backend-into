@@ -1,26 +1,24 @@
-
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      throw new Error('JWT_SECRET environment variable is required');
-    }
+  constructor(configService: ConfigService) {
+    const secret = configService.getOrThrow<string>('JWT_SECRET');
 
     super({
-      // Tells Passport to look for "Bearer <token>" in the Authorization header
+      // Look for "Bearer <token>" in the Authorization header
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
+      // Must match the secret used to sign tokens in JwtModule / AuthService
       secretOrKey: secret,
     });
   }
 
-  // Once the token is verified, whatever you return here is attached to req.user
-  async validate(payload: any) {
+  // Attached to req.user after the token is verified
+  async validate(payload: { sub?: string; id?: string; email: string }) {
     return { id: payload.sub || payload.id, email: payload.email };
   }
 }

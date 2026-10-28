@@ -1,10 +1,11 @@
-import { Controller, Get, Param, NotFoundException, Query, UseGuards, ClassSerializerInterceptor, UseInterceptors, Patch, Body, Req, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, ClassSerializerInterceptor, UseInterceptors, Patch, Body, Req, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from './users.service.js';
-import { LocalAuthenticationGuard } from '../auth/localAuthentication.guard.js';
+import { JwtAuthenticationGuard } from '../auth/jwtAuthentication.guard.js';
 import { UpdateProfileDto } from './dto/update-user-profile.dto.js';
 import type { Request } from 'express';
 
-@UseGuards(LocalAuthenticationGuard)
+// JWT required — send Authorization: Bearer <access_token>
+@UseGuards(JwtAuthenticationGuard)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }
@@ -37,14 +38,12 @@ export class UsersController {
     };
   }
 
-@Patch('profile')
-  @UseGuards(LocalAuthenticationGuard) // Protect this route so req.user is populated
+  @Patch('profile')
   async updateProfile(
     @Req() req: Request & { user?: { id?: string; userId?: string } },
     @Body() updateProfileDto: UpdateProfileDto,
   ) {
-    // Extracts user ID from the JWT payload attached to the
-    //  request
+    // User id comes from the JWT (req.user), set by JwtStrategy
     const userId = req.user?.id || req.user?.userId;
     if (!userId) {
       throw new UnauthorizedException();
