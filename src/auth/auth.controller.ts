@@ -15,11 +15,6 @@ export class AuthController {
     return this.authService.register(createUserDto);
   }
 
-
-  // @Post('login')
-  // login(@Body() loginUserDto: LoginDto) {
-  //   return this.authService.login(loginUserDto);
-  // }
   @HttpCode(200)
   @UseGuards(LocalAuthenticationGuard)
   @Post('login')
